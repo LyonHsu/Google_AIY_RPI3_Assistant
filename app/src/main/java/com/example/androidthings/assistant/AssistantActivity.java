@@ -29,6 +29,7 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Base64;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.webkit.WebView;
@@ -37,6 +38,9 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.example.androidthings.assistant.EmbeddedAssistant.ConversationCallback;
 import com.example.androidthings.assistant.EmbeddedAssistant.RequestCallback;
 import com.google.android.things.contrib.driver.button.Button;
@@ -55,7 +59,7 @@ import java.util.Locale;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class AssistantActivity extends Activity implements Button.OnButtonEventListener {
+public class AssistantActivity extends Activity implements Button.OnButtonEventListener ,VolumeDialog.VolumeAdjustListener {
     private static final String TAG = AssistantActivity.class.getSimpleName();
 
     // Peripheral and drivers constants.
@@ -91,6 +95,10 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
     private TextToSpeech textToSpeech;
     /* Keyword we are looking for to activate menu */
     private static final String KEYPHRASE = "ok google";
+
+    //volume
+    private VolumeDialog dialog;
+    private AudioManager mAudioMgr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +174,40 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             return;
         }
 
+        if(mLed!=null){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for(int i=0;i<3;i++){
+                        try {
+                            mLed.setValue(true);
+                            Thread.sleep(500);
+                            mLed.setValue(false);
+                            Thread.sleep(500);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }  catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }).start();
+        }
+
+        //set text to speech
+        textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                Log.d(TAG, "TTS init status:" + status);
+                if (status != TextToSpeech.ERROR) {
+                    int result = textToSpeech.setLanguage(Locale.getDefault());//Locale.);
+                    result = textToSpeech.speak("please say " + KEYPHRASE + " to open KeyWord!", TextToSpeech.QUEUE_FLUSH, null);
+
+                    Log.d(TAG, "speak result:" + result);
+                }
+            }
+        });
+
         // Set volume from preferences
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         int initVolume = preferences.getInt(PREF_CURRENT_VOLUME, DEFAULT_VOLUME);
@@ -178,160 +220,153 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         } catch (IOException | JSONException e) {
             Log.e(TAG, "error getting user credentials", e);
         }
-        mEmbeddedAssistant = new EmbeddedAssistant.Builder()
-                .setCredentials(userCredentials)
-                .setDeviceInstanceId(DEVICE_INSTANCE_ID)
-                .setDeviceModelId(DEVICE_MODEL_ID)
-                .setLanguageCode(LANGUAGE_CODE)
-                .setAudioInputDevice(audioInputDevice)
-                .setAudioOutputDevice(audioOutputDevice)
-                .setAudioSampleRate(SAMPLE_RATE)
-                .setAudioVolume(initVolume)
-                .setRequestCallback(new RequestCallback() {
-                    @Override
-                    public void onRequestStart() {
-                        Log.i(TAG, "starting assistant request, enable microphones");
-                        mButtonWidget.setText(R.string.button_listening);
-                        mButtonWidget.setEnabled(false);
-                    }
 
-                    @Override
-                    public void onSpeechRecognition(List<SpeechRecognitionResult> results) {
-                        for (final SpeechRecognitionResult result : results) {
-                            Log.i(TAG, "assistant request text: " + result.getTranscript() +
-                                " stability: " + Float.toString(result.getStability()));
-                            mAssistantRequestsAdapter.add(result.getTranscript());
+        if(userCredentials==null){
+            Log.e(TAG,"credentials userCredentials==null EmbeddedAssistant build fail!");
+            Toast.makeText(this,"this Google Action Credentials is null",Toast.LENGTH_SHORT);
+        }else {
+            Log.e(TAG,"credentials ="+userCredentials);
+            mEmbeddedAssistant = new EmbeddedAssistant.Builder()
+                    .setCredentials(userCredentials)
+                    .setDeviceInstanceId(DEVICE_INSTANCE_ID)
+                    .setDeviceModelId(DEVICE_MODEL_ID)
+                    .setLanguageCode(LANGUAGE_CODE)
+                    .setAudioInputDevice(audioInputDevice)
+                    .setAudioOutputDevice(audioOutputDevice)
+                    .setAudioSampleRate(SAMPLE_RATE)
+                    .setAudioVolume(initVolume)
+                    .setRequestCallback(new RequestCallback() {
+                        @Override
+                        public void onRequestStart() {
+                            Log.i(TAG, "starting assistant request, enable microphones");
+                            mButtonWidget.setText(R.string.button_listening);
+                            mButtonWidget.setEnabled(false);
                         }
-                    }
-                })
-                .setConversationCallback(new ConversationCallback() {
-                    @Override
-                    public void onResponseStarted() {
-                        super.onResponseStarted();
-                        // When bus type is switched, the AudioManager needs to reset the stream volume
-                        if (mDac != null) {
-                            try {
-                                mDac.setSdMode(Max98357A.SD_MODE_LEFT);
-                            } catch (IOException e) {
-                                Log.e(TAG, "error enabling DAC", e);
+
+                        @Override
+                        public void onSpeechRecognition(List<SpeechRecognitionResult> results) {
+                            for (final SpeechRecognitionResult result : results) {
+                                Log.i(TAG, "assistant request text: " + result.getTranscript() +
+                                        " stability: " + Float.toString(result.getStability()));
+                                mAssistantRequestsAdapter.add(result.getTranscript());
                             }
                         }
-                    }
-
-                    @Override
-                    public void onResponseFinished() {
-                        super.onResponseFinished();
-                        if (mDac != null) {
-                            try {
-                                mDac.setSdMode(Max98357A.SD_MODE_SHUTDOWN);
-                            } catch (IOException e) {
-                                Log.e(TAG, "error disabling DAC", e);
+                    })
+                    .setConversationCallback(new ConversationCallback() {
+                        @Override
+                        public void onResponseStarted() {
+                            super.onResponseStarted();
+                            // When bus type is switched, the AudioManager needs to reset the stream volume
+                            if (mDac != null) {
+                                try {
+                                    mDac.setSdMode(Max98357A.SD_MODE_LEFT);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "error enabling DAC", e);
+                                }
                             }
                         }
-                        if (mLed != null) {
-                            try {
-                                mLed.setValue(false);
-                            } catch (IOException e) {
-                                Log.e(TAG, "cannot turn off LED", e);
+
+                        @Override
+                        public void onResponseFinished() {
+                            super.onResponseFinished();
+                            if (mDac != null) {
+                                try {
+                                    mDac.setSdMode(Max98357A.SD_MODE_SHUTDOWN);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "error disabling DAC", e);
+                                }
+                            }
+                            if (mLed != null) {
+                                try {
+                                    mLed.setValue(false);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "cannot turn off LED", e);
+                                }
                             }
                         }
-                    }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        Log.e(TAG, "assist error: " + throwable.getMessage(), throwable);
-                    }
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Log.e(TAG, "assist error: " + throwable.getMessage(), throwable);
+                        }
 
-                    @Override
-                    public void onVolumeChanged(int percentage) {
-                        Log.i(TAG, "assistant volume changed: " + percentage);
+                        @Override
+                        public void onVolumeChanged(int percentage) {
+                            Log.i(TAG, "assistant volume changed: " + percentage);
 
-                        int result = textToSpeech.speak("assistant volume changed:  " + percentage, TextToSpeech.QUEUE_FLUSH, null);
-                        Log.d(TAG, "speak result:" + result);
-                        // Update our shared preferences
-                        Editor editor = PreferenceManager
-                                .getDefaultSharedPreferences(AssistantActivity.this)
-                                .edit();
-                        editor.putInt(PREF_CURRENT_VOLUME, percentage);
-                        editor.apply();
-                    }
+                            int result = textToSpeech.speak("assistant volume changed:  " + percentage, TextToSpeech.QUEUE_FLUSH, null);
+                            Log.d(TAG, "speak result:" + result);
+                            // Update our shared preferences
+                            Editor editor = PreferenceManager
+                                    .getDefaultSharedPreferences(AssistantActivity.this)
+                                    .edit();
+                            editor.putInt(PREF_CURRENT_VOLUME, percentage);
+                            editor.apply();
+                        }
 
-                    @Override
-                    public void onConversationFinished() {
-                        Log.i(TAG, "assistant conversation finished");
-                        mButtonWidget.setText(R.string.button_new_request);
-                        mButtonWidget.setEnabled(true);
-                    }
+                        @Override
+                        public void onConversationFinished() {
+                            Log.i(TAG, "assistant conversation finished");
+                            mButtonWidget.setText(R.string.button_new_request);
+                            mButtonWidget.setEnabled(true);
+                        }
 
-                    @Override
-                    public void onAssistantResponse(final String response) {
-                        if(!response.isEmpty()) {
+                        @Override
+                        public void onAssistantResponse(final String response) {
+                            if (!response.isEmpty()) {
+                                mMainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mAssistantRequestsAdapter.add("Google Assistant: " + response);
+                                    }
+                                });
+                            }
+                        }
+
+                        @Override
+                        public void onAssistantDisplayOut(final String html) {
                             mMainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mAssistantRequestsAdapter.add("Google Assistant: " + response);
+                                    // Need to convert to base64
+                                    try {
+                                        final byte[] data = html.getBytes("UTF-8");
+                                        final String base64String =
+                                                Base64.encodeToString(data, Base64.DEFAULT);
+                                        mWebView.loadData(base64String, "text/html; charset=utf-8",
+                                                "base64");
+                                    } catch (UnsupportedEncodingException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             });
                         }
-                    }
 
-                    @Override
-                    public void onAssistantDisplayOut(final String html) {
-                        mMainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Need to convert to base64
+                        public void onDeviceAction(String intentName, JSONObject parameters) {
+                            if (parameters != null) {
+                                Log.d(TAG, "Get device action " + intentName + " with parameters: " +
+                                        parameters.toString());
+                            } else {
+                                Log.d(TAG, "Get device action " + intentName + " with no paramete"
+                                        + "rs");
+                            }
+                            if (intentName.equals("action.devices.commands.OnOff")) {
                                 try {
-                                    final byte[] data = html.getBytes("UTF-8");
-                                    final String base64String =
-                                        Base64.encodeToString(data, Base64.DEFAULT);
-                                    mWebView.loadData(base64String, "text/html; charset=utf-8",
-                                        "base64");
-                                } catch (UnsupportedEncodingException e) {
-                                    e.printStackTrace();
+                                    boolean turnOn = parameters.getBoolean("on");
+                                    mLed.setValue(turnOn);
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Cannot get value of command", e);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "Cannot set value of LED", e);
                                 }
                             }
-                        });
-                    }
-
-                    public void onDeviceAction(String intentName, JSONObject parameters) {
-                        if (parameters != null) {
-                            Log.d(TAG, "Get device action " + intentName + " with parameters: " +
-                                parameters.toString());
-                        } else {
-                            Log.d(TAG, "Get device action " + intentName + " with no paramete"
-                                + "rs");
                         }
-                        if (intentName.equals("action.devices.commands.OnOff")) {
-                            try {
-                                boolean turnOn = parameters.getBoolean("on");
-                                mLed.setValue(turnOn);
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Cannot get value of command", e);
-                            } catch (IOException e) {
-                                Log.e(TAG, "Cannot set value of LED", e);
-                            }
-                        }
-                    }
-                })
-                .build();
-        mEmbeddedAssistant.connect();
+                    })
+                    .build();
+            mEmbeddedAssistant.connect();
 
-        textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                Log.d(TAG, "TTS init status:" + status);
-                if (status != TextToSpeech.ERROR) {
-                    int result = textToSpeech.setLanguage(Locale.getDefault());//Locale.);
 
-                    Log.d(TAG, "speak result:" + result);
-
-                    result = textToSpeech.speak("please say " + KEYPHRASE + " to open KeyWord!", TextToSpeech.QUEUE_FLUSH, null);
-
-                    Log.d(TAG, "speak result:" + result);
-                }
-            }
-        });
+        }
     }
 
     private AudioDeviceInfo findAudioDevice(int deviceFlag, int deviceType) {
@@ -349,6 +384,10 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
     public void onButtonEvent(Button button, boolean pressed) {
         try {
             if (mLed != null) {
+                String onOff="off";
+                if(pressed)
+                    onOff="on";
+                Log.v(TAG,"Led is "+onOff);
                 mLed.setValue(pressed);
             }
         } catch (IOException e) {
@@ -390,5 +429,42 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             mDac = null;
         }
         mEmbeddedAssistant.destroy();
+    }
+
+    @Override
+    public void onVolumeAdjust(int volume) {
+        if(volume>100)
+            volume=100;
+        if(volume<0)
+            volume=0;
+        Log.d(TAG,"调节后的音乐音量大小为：" + volume);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP && event.getAction() == KeyEvent.ACTION_DOWN) {
+            showVolumeDialog(AudioManager.ADJUST_RAISE);
+            return true;
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && event.getAction() == KeyEvent.ACTION_DOWN) {
+            showVolumeDialog(AudioManager.ADJUST_LOWER);
+            return true;
+        } else if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    private void showVolumeDialog(int direction) {
+        if (dialog == null || dialog.isShowing() != true) {
+            dialog = new VolumeDialog(this);
+            dialog.setVolumeAdjustListener(this);
+            dialog.show();
+        }
+        dialog.adjustVolume(direction, true);
+        if(mAudioMgr==null)
+            mAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        onVolumeAdjust(mAudioMgr.getStreamVolume(AudioManager.STREAM_MUSIC));
     }
 }

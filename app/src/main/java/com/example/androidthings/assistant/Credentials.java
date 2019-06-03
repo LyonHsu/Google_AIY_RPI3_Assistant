@@ -34,9 +34,9 @@ class Credentials {
         is.read(bytes);
         JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
         return new UserCredentials(
-                json.getString("client_id"),
-                json.getString("client_secret"),
-                json.getString("refresh_token")
+                json.optString("client_id"),
+                json.optString("client_secret"),
+                json.optString("refresh_token")
         );
     }
 }

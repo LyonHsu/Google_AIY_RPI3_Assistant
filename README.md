@@ -19,6 +19,7 @@ back the Assistant's spoken response on the connected speaker.
   1. Download `client_secret_XXXX.json`
 1. Install the [`google-oauthlib-tool`](https://github.com/GoogleCloudPlatform/google-auth-library-python-oauthlib) in a [Python 3](https://www.python.org/downloads/) virtual environment:
 
+安裝python 環境 & google-oauthlib-tool , 等下要編譯 Google OAuth憑證 用
 ```
 python3 -m venv env
 env/bin/python -m pip install --upgrade pip setuptools
@@ -28,8 +29,10 @@ source env/bin/activate
 
 - Use the [`google-oauthlib-tool`][google-oauthlib-tool] to generate user credentials:
 
+
+編譯 Google OAuth憑證 並解儲存到 app檔案裡面
 ```bash
-google-oauthlib-tool --client-secrets client_secret_XXXX.json \
+google-oauthlib-tool --client-secrets OAuth2_0_Credentials.json \
                      --credentials app/src/main/res/raw/credentials.json \
                      --scope https://www.googleapis.com/auth/assistant-sdk-prototype \
                      --save
@@ -37,6 +40,8 @@ google-oauthlib-tool --client-secrets client_secret_XXXX.json \
 - Make sure to set the [Activity Controls][set-activity-controls] for the Google Account using the application.
 - On the first install, grant the sample required permissions for audio and internet access:
 
+然後編譯app 
+安裝App 到 pi3 
 ```bash
 ./gradlew assembleDebug
 adb install -g app/build/outputs/apk/debug/app-debug.apk
@@ -44,6 +49,7 @@ adb install -g app/build/outputs/apk/debug/app-debug.apk
 
 - On Android Studio, click on the "Run" button or on the command line, type:
 
+開啟App 
 ```bash
 ./gradlew installDebug
 adb shell am start com.example.androidthings.assistant/.AssistantActivity
