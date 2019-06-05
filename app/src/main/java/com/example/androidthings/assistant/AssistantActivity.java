@@ -413,8 +413,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         }
         if (pressed) {
             mAssistantRequestsAdapter.clear();
-            int result = getTextToSpeech().speak("Ouch!", TextToSpeech.QUEUE_FLUSH, null);
-            Log.d(TAG, "speak result:" + result);
+            LyonTextToSpeech(textToSpeech,"Ouch!");
             mEmbeddedAssistant.startConversation();
         }
     }
@@ -456,10 +455,8 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             volume=100;
         if(volume<0)
             volume=0;
+        LyonTextToSpeech(getTextToSpeech(),"噹");
 
-        int result = getTextToSpeech().speak("噹", TextToSpeech.QUEUE_FLUSH, null);
-
-        Log.d(TAG, "speak result:" + result);
         Log.d(TAG,"调节后的音乐音量大小为：" + volume);
     }
 

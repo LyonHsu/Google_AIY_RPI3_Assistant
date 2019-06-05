@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKeyListener {
     private Dialog dialog;
@@ -18,7 +19,7 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
     private int MUSIC = AudioManager.STREAM_MUSIC;
     private int mMaxVolume;
     private int mNowVolume;
-
+    private TextView volumeTxt;
     public VolumeDialog(Context context) {
         mAudioMgr = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mMaxVolume = mAudioMgr.getStreamMaxVolume(MUSIC);
@@ -28,6 +29,9 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
         sb_music = (SeekBar) view.findViewById(R.id.sb_music);
         sb_music.setOnSeekBarChangeListener(this);
         sb_music.setProgress(sb_music.getMax() * mNowVolume / mMaxVolume);
+        volumeTxt=(TextView) view.findViewById(R.id.volumeTxt);
+        volumeTxt.setText("");
+        volumeTxt.setText((sb_music.getMax() * mNowVolume / mMaxVolume)+"");
     }
 
     public void show() {
@@ -55,21 +59,23 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
 
     public void adjustVolume(int direction, boolean fromActivity) {
         if (direction == AudioManager.ADJUST_RAISE) {
-            mNowVolume += 1;
+            mNowVolume += 10;
         } else {
-            mNowVolume -= 1;
+            mNowVolume -= 10;
         }
         sb_music.setProgress(sb_music.getMax() * mNowVolume / mMaxVolume);
+        volumeTxt.setText((sb_music.getMax() * mNowVolume / mMaxVolume)+"");
         mAudioMgr.adjustStreamVolume(MUSIC, direction, AudioManager.FLAG_PLAY_SOUND);
         if (mListener != null && fromActivity != true) {
             mListener.onVolumeAdjust(mNowVolume);
         }
+
         close();
     }
 
     private void close() {
         mHandler.removeCallbacks(mClose);
-        mHandler.postDelayed(mClose, 2000);
+        mHandler.postDelayed(mClose, 600);
     }
 
     private Handler mHandler = new Handler();
