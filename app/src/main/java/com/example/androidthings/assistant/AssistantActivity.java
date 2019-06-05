@@ -55,6 +55,7 @@ import com.google.auth.oauth2.UserCredentials;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -95,6 +96,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
     private WebView mWebView;
 
     private TextToSpeech textToSpeech;
+    private TextToSpeech textToSpeechEng;
     /* Keyword we are looking for to activate menu */
     private static final String KEYPHRASE = "ok google";
 
@@ -102,12 +104,25 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
     private VolumeDialog dialog;
     private AudioManager mAudioMgr;
 
+    String openS = "請說"+KEYPHRASE+"來喚醒我!";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "starting assistant demo");
 
         setContentView(R.layout.activity_main);
+
+        //set text to speech
+        textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                Log.d(TAG, "TTS init status:" + status);
+                if (status != TextToSpeech.ERROR) {
+                    LyonTextToSpeech(textToSpeech,openS);
+                }
+            }
+        });
 
         final ListView assistantRequestsListView = findViewById(R.id.assistantRequestsListView);
         mAssistantRequestsAdapter =
@@ -142,6 +157,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             public void onClick(View v) {
                 Intent i = new Intent(AssistantActivity.this,Setting.class);
                 startActivity(i);
+                LyonTextToSpeech(getTextToSpeech(),openS);
             }
         });
 
@@ -205,19 +221,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             }).start();
         }
 
-        //set text to speech
-        textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                Log.d(TAG, "TTS init status:" + status);
-                if (status != TextToSpeech.ERROR) {
-                    int result = textToSpeech.setLanguage(Locale.getDefault());//Locale.);
-                    result = textToSpeech.speak("please say " + KEYPHRASE + " to open KeyWord!", TextToSpeech.QUEUE_FLUSH, null);
 
-                    Log.d(TAG, "speak result:" + result);
-                }
-            }
-        });
 
         // Set volume from preferences
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -308,7 +312,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                         public void onVolumeChanged(int percentage) {
                             Log.i(TAG, "assistant volume changed: " + percentage);
 
-                            int result = textToSpeech.speak("assistant volume changed:  " + percentage, TextToSpeech.QUEUE_FLUSH, null);
+                            int result = getTextToSpeech().speak("assistant volume changed:  " + percentage, TextToSpeech.QUEUE_FLUSH, null);
                             Log.d(TAG, "speak result:" + result);
                             // Update our shared preferences
                             Editor editor = PreferenceManager
@@ -409,7 +413,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         }
         if (pressed) {
             mAssistantRequestsAdapter.clear();
-            int result = textToSpeech.speak("Ouch!", TextToSpeech.QUEUE_FLUSH, null);
+            int result = getTextToSpeech().speak("Ouch!", TextToSpeech.QUEUE_FLUSH, null);
             Log.d(TAG, "speak result:" + result);
             mEmbeddedAssistant.startConversation();
         }
@@ -453,7 +457,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         if(volume<0)
             volume=0;
 
-        int result = textToSpeech.speak("down", TextToSpeech.QUEUE_FLUSH, null);
+        int result = getTextToSpeech().speak("噹", TextToSpeech.QUEUE_FLUSH, null);
 
         Log.d(TAG, "speak result:" + result);
         Log.d(TAG,"调节后的音乐音量大小为：" + volume);
@@ -485,5 +489,86 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         if(mAudioMgr==null)
             mAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         onVolumeAdjust(mAudioMgr.getStreamVolume(AudioManager.STREAM_MUSIC));
+    }
+
+    public TextToSpeech getTextToSpeech(){
+        //set text to speech
+        if(textToSpeech==null) {
+            textToSpeech= new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    Log.d(TAG, "TTS init status:" + status);
+                    if (status != TextToSpeech.ERROR) {
+//                        int result = textToSpeech.setLanguage(Locale.getDefault());//Locale.);
+                        int result = textToSpeech.setLanguage(Locale.TAIWAN);
+
+                        Log.d(TAG, "speak result:" + result);
+                    }
+                }
+            });
+        }
+        return textToSpeech;
+    }
+
+
+    private ArrayList<HashMap<String,String>> getEngorChingString(String s){
+        Log.d(TAG,"20190605 string:"+s);
+        HashMap<String,String> hashMap = new HashMap<>();
+        ArrayList<HashMap<String,String>> arrayList = new ArrayList<>();
+        char[] c = s.toCharArray();
+        Log.d(TAG,"20190605 c size:"+c.length);
+        String word="";
+        boolean isEng=false;
+        boolean isoldEng=false;
+        for(int i=0;i<c.length;i++){
+            String cc = c[i]+"";
+
+            if( cc.matches("[a-zA-Z0-9|\\.]*") )
+            {
+                isEng=true;
+            }
+            else
+            {
+                isEng=false;
+            }
+            Log.d(TAG,"20190605 c:"+cc+" isEng:"+isEng+ " / "+isoldEng);
+
+            if(isoldEng!=isEng){
+                hashMap.put("word",word);
+                hashMap.put("isEng",isoldEng+"");
+                arrayList.add(hashMap);
+                isoldEng=isEng;
+                word="";
+                hashMap = new HashMap<>();
+            }
+            word=word+cc;
+            Log.d(TAG,"20190605 word:"+word);
+        }
+        hashMap.put("word",word);
+        hashMap.put("isEng",isoldEng+"");
+        arrayList.add(hashMap);
+
+        for(int i=0;i<arrayList.size();i++){
+            Log.d(TAG,"20190605 arrayList:"+arrayList.get(i).get("word")+" / "+arrayList.get(i).get("isEng"));
+        }
+
+        return arrayList;
+    }
+
+    public void LyonTextToSpeech(TextToSpeech textToSpeech, String sss){
+        ArrayList<HashMap<String,String>> arrayList = getEngorChingString(sss);
+        for(int i =0;i<arrayList.size();i++){
+            int result=-1;
+            if(arrayList.get(i).get("isEng").equals("true")){
+                result =textToSpeech.setLanguage(Locale.ENGLISH);
+            }else{
+                textToSpeech.setLanguage(Locale.TAIWAN);
+            }
+            if(i==0){
+                textToSpeech.speak( arrayList.get(i).get("word") , TextToSpeech.QUEUE_FLUSH, null);
+            }else
+                textToSpeech.speak( arrayList.get(i).get("word") , TextToSpeech.QUEUE_ADD, null);
+            Log.d(TAG, arrayList.get(i).get("word")+" speak result:" + result);
+        }
     }
 }
