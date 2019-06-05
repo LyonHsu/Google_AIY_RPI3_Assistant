@@ -16,6 +16,9 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.androidthings.assistant">
+
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -29,6 +32,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- Launch activity automatically on boot -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.IOT_LAUNCHER"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
             <!--
@@ -43,5 +55,12 @@
             </intent-filter>
 -->
         </activity>
+
+        <activity
+            android:name=".wifi.WifiMenu"
+            android:screenOrientation="landscape" />
+
+        <activity android:name=".Setting.Setting"
+            android:screenOrientation="landscape" />
     </application>
 </manifest>

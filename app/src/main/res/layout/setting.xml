@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#009dff"
+    tools:context="raspberrypiluncher.android.lyon.com.raspberrypiluncher.MainActivity">
+
+    <GridView
+        android:id="@+id/apps_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:numColumns="4"
+        android:listSelector="@drawable/buttoncolor"
+        tools:listitem="@layout/app_list_item"
+        android:layout_above="@+id/linearLayout"></GridView>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#88000000"
+        android:orientation="vertical"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/linearLayout"
+        android:layout_alignParentStart="true">
+
+        <TextView
+            android:id="@+id/metrics"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:text="螢幕大小："
+            android:textColor="@android:color/white"
+            android:textSize="25sp" />
+
+        <TextView
+            android:id="@+id/ipAddress"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:ellipsize="marquee"
+            android:text="IP:"
+            android:textSize="25sp" />
+
+    </LinearLayout>
+</RelativeLayout>

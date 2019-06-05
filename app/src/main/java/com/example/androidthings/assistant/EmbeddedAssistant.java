@@ -223,6 +223,7 @@ public class EmbeddedAssistant {
                 @Override
                 public void onCompleted() {
                     // create a new AudioTrack to workaround audio routing issues.
+                    Log.d(TAG,"mAudioOutputFormat:"+mAudioOutputFormat);
                     AudioTrack audioTrack = new AudioTrack.Builder()
                             .setAudioFormat(mAudioOutputFormat)
                             .setBufferSizeInBytes(mAudioOutputBufferSize)

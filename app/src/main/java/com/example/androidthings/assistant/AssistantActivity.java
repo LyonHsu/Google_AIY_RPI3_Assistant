@@ -18,6 +18,7 @@ package com.example.androidthings.assistant;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.AudioDeviceInfo;
@@ -37,12 +38,13 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.androidthings.assistant.EmbeddedAssistant.ConversationCallback;
 import com.example.androidthings.assistant.EmbeddedAssistant.RequestCallback;
+import com.example.androidthings.assistant.Setting.Setting;
 import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.voicehat.Max98357A;
 import com.google.android.things.contrib.driver.voicehat.VoiceHat;
@@ -131,6 +133,15 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             @Override
             public void onClick(View view) {
                 mEmbeddedAssistant.startConversation();
+            }
+        });
+
+        ImageButton setting =(ImageButton)findViewById(R.id.setting);
+        setting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(AssistantActivity.this,Setting.class);
+                startActivity(i);
             }
         });
 
@@ -250,6 +261,9 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                                         " stability: " + Float.toString(result.getStability()));
                                 mAssistantRequestsAdapter.add(result.getTranscript());
                             }
+
+                            if(results.size()>0)
+                                mAssistantRequestsAdapter.add(results.get(0).getTranscript());
                         }
                     })
                     .setConversationCallback(new ConversationCallback() {
@@ -394,6 +408,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             Log.d(TAG, "error toggling LED:", e);
         }
         if (pressed) {
+            mAssistantRequestsAdapter.clear();
             int result = textToSpeech.speak("Ouch!", TextToSpeech.QUEUE_FLUSH, null);
             Log.d(TAG, "speak result:" + result);
             mEmbeddedAssistant.startConversation();
@@ -437,6 +452,10 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             volume=100;
         if(volume<0)
             volume=0;
+
+        int result = textToSpeech.speak("down", TextToSpeech.QUEUE_FLUSH, null);
+
+        Log.d(TAG, "speak result:" + result);
         Log.d(TAG,"调节后的音乐音量大小为：" + volume);
     }
 

@@ -19,4 +19,23 @@
   <string name="button_new_request">New Request</string>
   <string name="button_retry">Retry</string>
   <string name="button_listening">Listening</string>
+
+    <string name="wifistatus">Ｗifi狀態：</string>
+    <string name="wifiname">無線網路名稱(SSID)：</string>
+    <string name="wifipassword">無線網路密碼(PASSWD)：</string>
+    <string name="wifishowpassword">顯示密碼(SHOWPW)：</string>
+    <string name="wifisecuritytype">加密類型(TYPE)：</string>
+    <string name="wificonnect">連線(CONNECT)</string>
+    <string name="wifititle">無線網路異常</string>
+    <string name="wifioffmassage">本功能需開啟無線網路才可進行下一步設定, 請確認是否要開啟無線網路?</string>
+
+    <string name="parse_app_id">net.fetnet.parse_test_1</string>
+    <string name="parse_client_key">1234qwerasdf</string>
+    <string name="parse_server_url">http://ebu2.ddns.net/parse/</string>
+
+
+    <string name="speech_prompt">Say something&#8230;</string>
+    <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
+    <string name="tap_on_mic">Tap on mic to speak</string>
+    <string name="action_settings">Settings</string>
 </resources>

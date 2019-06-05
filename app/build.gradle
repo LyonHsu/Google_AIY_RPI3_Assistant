@@ -44,4 +44,9 @@ dependencies {
 
     implementation 'com.google.android.things.contrib:driver-voicehat:1.0'
     implementation 'com.android.support:support-annotations:27.1.0'
+
+    implementation 'com.android.support:support-v4:25.1.1'
+    implementation 'com.android.support:appcompat-v7:25.2.0'
+
+    implementation 'com.android.support:recyclerview-v7:24.2.1'
 }
