@@ -16,7 +16,7 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
     private View view;
     private SeekBar sb_music;
     private AudioManager mAudioMgr;
-    private int MUSIC = AudioManager.STREAM_MUSIC;
+    private int MUSIC = AudioManager.STREAM_SYSTEM;
     private int mMaxVolume;
     private int mNowVolume;
     private TextView volumeTxt;
@@ -59,13 +59,20 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
 
     public void adjustVolume(int direction, boolean fromActivity) {
         if (direction == AudioManager.ADJUST_RAISE) {
-            mNowVolume += 10;
+            mNowVolume += 1;
         } else {
-            mNowVolume -= 10;
+            mNowVolume -= 1;
         }
         sb_music.setProgress(sb_music.getMax() * mNowVolume / mMaxVolume);
-        volumeTxt.setText((sb_music.getMax() * mNowVolume / mMaxVolume)+"");
+        int sound=(sb_music.getMax() * mNowVolume / mMaxVolume);
+        if (sound > 100) {
+            sound=100;
+        }
+        if(sound<0)
+            sound=0;
+        volumeTxt.setText(sound+"");
         mAudioMgr.adjustStreamVolume(MUSIC, direction, AudioManager.FLAG_PLAY_SOUND);
+//        mAudioMgr.setStreamVolume(AudioManager.STREAM_SYSTEM,sound,AudioManager.FLAG_PLAY_SOUND);
         if (mListener != null && fromActivity != true) {
             mListener.onVolumeAdjust(mNowVolume);
         }

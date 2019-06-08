@@ -110,6 +110,7 @@ public class EmbeddedAssistant {
                         try {
                             JSONObject deviceAction = new JSONObject(value.getDeviceAction()
                                 .getDeviceRequestJson());
+                            Log.d(TAG, "Received response 2: " + deviceAction.toString());
                             JSONArray inputs = deviceAction.getJSONArray("inputs");
                             for (int i = 0; i < inputs.length(); i++) {
                                 if (inputs.getJSONObject(i).getString("intent").equals(
@@ -144,6 +145,7 @@ public class EmbeddedAssistant {
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
+                            Log.e(TAG, "Received response 2 error: " + e.fillInStackTrace());
                         }
                     }
                     if (value.getEventType() == EventType.END_OF_UTTERANCE) {
@@ -162,6 +164,32 @@ public class EmbeddedAssistant {
                     }
                     if (value.getDialogStateOut() != null) {
                         mConversationState = value.getDialogStateOut().getConversationState();
+
+                        //key word start
+                        List<SpeechRecognitionResult> results =value.getSpeechResultsList();
+                        boolean isKey = false;
+                        for (final SpeechRecognitionResult result : results) {
+                            String keyword =result.getTranscript();
+                            float stability =result.getStability();
+                            Log.i(TAG, "20190608 assistant request text: " + keyword +
+                                    " stability: " +stability);
+                            if(keyword.contains("亞絲娜") || keyword.contains("愛麗絲")){
+                                if(stability==1.0)
+                                isKey=true;
+                                Log.d(TAG,"20190608 get key:"+keyword);
+                                break;
+                            }
+                        }
+                        if(!isKey){
+                            Log.d(TAG,"20190608 no key");
+                            return;
+                        }else{
+                            mConversationCallback.onAssistantResponse("是的 你找我有什麼事？");
+
+
+                        }
+                        //key end
+
                         if (value.getDialogStateOut().getVolumePercentage() != 0) {
                             final int volumePercentage = value.getDialogStateOut().getVolumePercentage();
                             mVolume = volumePercentage;
@@ -176,13 +204,16 @@ public class EmbeddedAssistant {
                             @Override
                             public void run() {
                                 mRequestCallback.onSpeechRecognition(value.getSpeechResultsList());
+//
                             }
                         });
                         mMicrophoneMode = value.getDialogStateOut().getMicrophoneMode();
+                        //輸出Google回傳的值
                         mConversationCallback.onAssistantResponse(value.getDialogStateOut()
                             .getSupplementalDisplayText());
                     }
                     if (value.getAudioOut() != null) {
+                        Log.d(TAG, "Received response 3: " + value.getAudioOut().getAudioData().toStringUtf8());
                         if (mAudioOutSize <= value.getAudioOut().getSerializedSize()) {
                             mAudioOutSize = value.getAudioOut().getSerializedSize();
                         } else {
@@ -246,6 +277,7 @@ public class EmbeddedAssistant {
                             @Override
                             public void run() {
                                 mConversationCallback.onAudioSample(buf);
+                                Log.e(TAG,"20190608 buf:"+buf.toString());
                             }
                         });
                         audioTrack.write(buf, buf.remaining(),
@@ -356,6 +388,7 @@ public class EmbeddedAssistant {
     }
 
     public void startConversation(final String inputQuery) {
+        Log.d(TAG,"20190608 開始會話："+inputQuery);
         mRequestCallback.onRequestStart();
         mAssistantHandler.post(new Runnable() {
             @Override
@@ -387,6 +420,7 @@ public class EmbeddedAssistant {
      * Manually ends a conversation with the Assistant.
      */
     public void stopConversation() {
+        Log.d(TAG,"20190608 結束會話");
         mAssistantHandler.post(new Runnable() {
             @Override
             public void run() {

@@ -16,6 +16,7 @@
 
 package com.example.androidthings.assistant;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,8 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -220,6 +223,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                 }
             }).start();
         }
+        getLocalIpAddress(this);
 
 
 
@@ -261,7 +265,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                         @Override
                         public void onSpeechRecognition(List<SpeechRecognitionResult> results) {
                             for (final SpeechRecognitionResult result : results) {
-                                Log.i(TAG, "assistant request text: " + result.getTranscript() +
+                                Log.i(TAG, "20190608 assistant request text: " + result.getTranscript() +
                                         " stability: " + Float.toString(result.getStability()));
                                 mAssistantRequestsAdapter.add(result.getTranscript());
                             }
@@ -332,12 +336,14 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                         @Override
                         public void onAssistantResponse(final String response) {
                             if (!response.isEmpty()) {
+                                Log.d(TAG,"20190608 response:"+response);
                                 mMainHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
                                         mAssistantRequestsAdapter.add("Google Assistant: " + response);
                                     }
                                 });
+                                LyonTextToSpeech(getTextToSpeech(),response);
                             }
                         }
 
@@ -385,6 +391,10 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
 
 
         }
+        //AudioManager am = (AudioManager)getSystemService( Context.AUDIO_SERVICE );
+        //int vVolumnMax = am.getStreamMaxVolume( AudioManager.STREAM_SYSTEM );
+        //am.setStreamVolume( AudioManager.STREAM_SYSTEM, vVolumnMax/2, AudioManager.FLAG_PLAY_SOUND );
+
     }
 
     private AudioDeviceInfo findAudioDevice(int deviceFlag, int deviceType) {
@@ -485,7 +495,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         dialog.adjustVolume(direction, true);
         if(mAudioMgr==null)
             mAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        onVolumeAdjust(mAudioMgr.getStreamVolume(AudioManager.STREAM_MUSIC));
+        onVolumeAdjust(mAudioMgr.getStreamVolume(AudioManager.STREAM_SYSTEM));
     }
 
     public TextToSpeech getTextToSpeech(){
@@ -568,4 +578,22 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             Log.d(TAG, arrayList.get(i).get("word")+" speak result:" + result);
         }
     }
+
+    @SuppressLint("WifiManagerLeak")
+    public String getLocalIpAddress(Context context) {
+
+        String ip =  "no connect wifi!";
+        WifiManager wifiMan = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInf = wifiMan.getConnectionInfo();
+        int ipAddress = wifiInf.getIpAddress();
+        ip=String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
+
+        Log.i(TAG, "***** IP="+ ip);
+
+        LyonTextToSpeech(textToSpeech,"已經連結到"+wifiInf.getSSID()+",Ip="+ip);
+
+
+        return "Wifi:"+ip+"\n ("+wifiInf.getSSID().toString()+") connected\n"+wifiInf.getBSSID();
+    }
+
 }
