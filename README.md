@@ -19,7 +19,7 @@ back the Assistant's spoken response on the connected speaker.
   1. Download `client_secret_XXXX.json`
 1. Install the [`google-oauthlib-tool`](https://github.com/GoogleCloudPlatform/google-auth-library-python-oauthlib) in a [Python 3](https://www.python.org/downloads/) virtual environment:
 
-安裝python 環境 & google-oauthlib-tool , 等下要編譯 Google OAuth憑證 用
+開啟python3 模擬環境 & google-oauthlib-tool , 等下要編譯 Google OAuth憑證 用
 ```
 python3 -m venv env
 env/bin/python -m pip install --upgrade pip setuptools
@@ -31,11 +31,8 @@ source env/bin/activate
 
 
 編譯 Google OAuth憑證 並解儲存到 app檔案裡面
-```bash
-google-oauthlib-tool --client-secrets OAuth2_0_Credentials.json \
-                     --credentials app/src/main/res/raw/credentials.json \
-                     --scope https://www.googleapis.com/auth/assistant-sdk-prototype \
-                     --save
+```
+bash env/bin/google-oauthlib-tool --client-secrets OAuth2_0_Credentials.json  --credentials app/src/main/res/raw/credentials.json  --scope https://www.googleapis.com/auth/assistant-sdk-prototype  --save
 ```
 - Make sure to set the [Activity Controls][set-activity-controls] for the Google Account using the application.
 - On the first install, grant the sample required permissions for audio and internet access:

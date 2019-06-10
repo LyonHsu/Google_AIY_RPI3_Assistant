@@ -59,9 +59,9 @@ public class VolumeDialog implements SeekBar.OnSeekBarChangeListener, View.OnKey
 
     public void adjustVolume(int direction, boolean fromActivity) {
         if (direction == AudioManager.ADJUST_RAISE) {
-            mNowVolume += 10;
+            mNowVolume += 1;
         } else {
-            mNowVolume -= 10;
+            mNowVolume -= 1;
         }
         sb_music.setProgress(sb_music.getMax() * mNowVolume / mMaxVolume);
         volumeTxt.setText((sb_music.getMax() * mNowVolume / mMaxVolume)+"");

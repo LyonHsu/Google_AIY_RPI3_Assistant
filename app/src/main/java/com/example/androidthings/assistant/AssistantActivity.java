@@ -16,6 +16,7 @@
 
 package com.example.androidthings.assistant;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,8 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -104,7 +107,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
     private VolumeDialog dialog;
     private AudioManager mAudioMgr;
 
-    String openS = "請說"+KEYPHRASE+"來喚醒我!";
+    String openS = "Hi Baby 你好寶貝 ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +123,8 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                 Log.d(TAG, "TTS init status:" + status);
                 if (status != TextToSpeech.ERROR) {
                     LyonTextToSpeech(textToSpeech,openS);
+
+                    getLocalIpAddress(AssistantActivity.this);
                 }
             }
         });
@@ -157,7 +162,8 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             public void onClick(View v) {
                 Intent i = new Intent(AssistantActivity.this,Setting.class);
                 startActivity(i);
-                LyonTextToSpeech(getTextToSpeech(),openS);
+//                LyonTextToSpeech(getTextToSpeech(),openS);
+                getLocalIpAddress(AssistantActivity.this);
             }
         });
 
@@ -220,6 +226,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
                 }
             }).start();
         }
+
 
 
 
@@ -520,7 +527,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
         for(int i=0;i<c.length;i++){
             String cc = c[i]+"";
 
-            if( cc.matches("[a-zA-Z0-9|\\.]*") )
+            if( cc.matches("[a-zA-Z|\\.]*") )//a-zA-Z0-9
             {
                 isEng=true;
             }
@@ -568,4 +575,22 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             Log.d(TAG, arrayList.get(i).get("word")+" speak result:" + result);
         }
     }
+
+
+    @SuppressLint("WifiManagerLeak")
+    public String getLocalIpAddress(Context context) {
+
+        String ip =  "no connect wifi!";
+        WifiManager wifiMan = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInf = wifiMan.getConnectionInfo();
+        int ipAddress = wifiInf.getIpAddress();
+        ip=String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
+
+        Log.e(TAG, "20190610 ***** IP="+ ip);
+        String theSpeech="已經連結到"+wifiInf.getSSID()+",Ip="+ip.replace(".","點");
+        Log.e(TAG, "20190610***** theSpeechIP="+ theSpeech);
+        LyonTextToSpeech(textToSpeech,theSpeech);
+        return "Wifi:"+ip+"\n ("+wifiInf.getSSID().toString()+") connected\n"+wifiInf.getBSSID();
+    }
+
 }
