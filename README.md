@@ -31,11 +31,11 @@ source env/bin/activate
 
 
 編譯 Google OAuth憑證 並解儲存到 app檔案裡面
-```bash
-google-oauthlib-tool --client-secrets OAuth2_0_Credentials.json \
-                     --credentials app/src/main/res/raw/credentials.json \
-                     --scope https://www.googleapis.com/auth/assistant-sdk-prototype \
-                     --save
+```                    
+python env/bin/google-oauthlib-tool --client-secrets aiyspeak2goNotToolYet.json  --credentials aiyspeak2go.json  --scope https://www.googleapis.com/auth/assistant-sdk-prototype  --save
+
+
+                     aiyspeak2go
 ```
 - Make sure to set the [Activity Controls][set-activity-controls] for the Google Account using the application.
 - On the first install, grant the sample required permissions for audio and internet access:
